@@ -105,6 +105,39 @@ def load_emnist(batch_size, is_training=True):
         num_te_batch = 116323 // batch_size
         return teX / 255., teY, num_te_batch
 
+def load_overlapping_emnist(batch_size, is_training=True):
+    path = os.path.join('data', 'EMNIST_OVERLAP')
+    if is_training:
+        fd = open(os.path.join(path, 'emnist-byclass-train-images-idx3-ubyte_overlap'))
+        loaded = np.fromfile(file=fd, dtype=np.uint8)
+        trainX = loaded[16:].reshape((697932, 28, 28, 1)).astype(np.float32)
+
+        fd = open(os.path.join(path, 'emnist-byclass-train-labels-idx1-ubyte_overlap'))
+        loaded = np.fromfile(file=fd, dtype=np.uint8)
+        trainY = loaded[8:].reshape((697932)).astype(np.int32)
+
+        trX = trainX[:558345] / 255.
+        trY = trainY[:558345]
+
+        valX = trainX[558345:, ] / 255.
+        valY = trainY[558345:]
+
+        num_tr_batch = 558345 // batch_size
+        num_val_batch = 139587 // batch_size
+
+        return trX, trY, num_tr_batch, valX, valY, num_val_batch
+    else:
+        fd = open(os.path.join(path, 'emnist-byclass-test-images-idx3-ubyte'))
+        loaded = np.fromfile(file=fd, dtype=np.uint8)
+        teX = loaded[16:].reshape((116323, 28, 28, 1)).astype(np.float)
+
+        fd = open(os.path.join(path, 'emnist-byclass-test-labels-idx1-ubyte'))
+        loaded = np.fromfile(file=fd, dtype=np.uint8)
+        teY = loaded[8:].reshape((116323)).astype(np.int32)
+
+        num_te_batch = 116323 // batch_size
+        return teX / 255., teY, num_te_batch
+
 
 def load_data(dataset, batch_size, is_training=True, one_hot=False):
     if dataset == 'mnist':

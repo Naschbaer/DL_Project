@@ -14,8 +14,8 @@ flags.DEFINE_float('lambda_val', 0.5, 'down weight of the loss for absent digit 
 
 # for training
 flags.DEFINE_integer('batch_size', 40, 'batch size')
-flags.DEFINE_integer('epoch', 2, 'epoch')
-flags.DEFINE_integer('iter_routing', 4, 'number of iterations in routing algorithm')
+flags.DEFINE_integer('epoch', 1, 'epoch')
+flags.DEFINE_integer('iter_routing', 3, 'number of iterations in routing algorithm')
 flags.DEFINE_boolean('mask_with_y', True, 'use the true label to mask out target capsule or not')
 
 flags.DEFINE_float('stddev', 0.01, 'stddev for W initializer')
