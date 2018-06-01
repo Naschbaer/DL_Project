@@ -26,7 +26,7 @@ flags.DEFINE_float('regularization_scale', 0.392, 'regularization coefficient fo
 #   environment setting    #
 ############################
 flags.DEFINE_string('dataset', 'mnist', 'The name of dataset [mnist, fashion-mnist')
-flags.DEFINE_boolean('is_training', False, 'train or predict phase')
+flags.DEFINE_boolean('is_training', True, 'train or predict phase')
 flags.DEFINE_integer('num_threads', 8, 'number of threads of enqueueing examples')
 flags.DEFINE_string('logdir', '/home/kuba/CapsNet-Tensorflow/logs', 'logs directory')
 flags.DEFINE_integer('train_sum_freq', 100, 'the frequency of saving train summary(step)')
