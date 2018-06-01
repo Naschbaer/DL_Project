@@ -146,6 +146,8 @@ def load_data(dataset, batch_size, is_training=True, one_hot=False):
         return load_fashion_mnist(batch_size, is_training)
     elif dataset == 'emnist':
         return load_emnist(batch_size, is_training)
+    elif dataset == 'emnist_overlap':
+        return load_overlapping_emnist(batch_size, is_training)
     else:
         raise Exception('Invalid dataset, please check the name of dataset:', dataset)
 
@@ -157,6 +159,8 @@ def get_batch_data(dataset, batch_size, num_threads):
         trX, trY, num_tr_batch, valX, valY, num_val_batch = load_fashion_mnist(batch_size, is_training=True)
     elif dataset == 'emnist':
         trX, trY, num_tr_batch, valX, valY, num_val_batch = load_emnist(batch_size, is_training=True)
+    elif dataset == 'emnist_overlap':
+        trX, trY, num_tr_batch, valX, valY, num_val_batch = load_overlapping_emnist(batch_size, is_training=True)
     else:
         raise Exception('Invalid dataset, please check the name of dataset:', dataset)
     data_queues = tf.train.slice_input_producer([trX, trY])
