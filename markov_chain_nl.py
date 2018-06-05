@@ -15,11 +15,13 @@ def markov_chain_of_natural_language(order: int, input_file: str):
     
     for n in range(order):
         dims += (NUM_CHARS,)
+#    if order==0:
+#        dims += (1,)
     markov_chain_matrix = np.zeros(dims, dtype=np.float)
     with open(input_file) as f:
         last_chars = []
         for line in f:
-            last_chars = last_chars[-order:]
+            last_chars = last_chars[-(order+1):]
             for char in line:
                 value = ord(char)
                 if value >= 97 and value <= 122:
@@ -60,7 +62,7 @@ def markov_chain_of_natural_language_lite(order: int, input_file: str):
     with open(input_file) as f:
         last_chars = []
         for line in f:
-            last_chars = last_chars[-order:]
+            last_chars = last_chars[-(order+1):]
             for char in line:
                 if len(last_chars)<order:
                     last_chars.append(ord(char))
@@ -80,7 +82,8 @@ def markov_chain_of_natural_language_lite(order: int, input_file: str):
                     if ord(char) >= NUM_CHARS-1:
                         print(str(ord(char)) +","+ str(char))
                         continue
-                    this_mcm[ord(char)] += 1   
+                    if ord(char) != 10:
+                        this_mcm[ord(char)] += 1   
                        
                     last_chars.append(ord(char))
                     total_num_chars += 1
@@ -136,12 +139,12 @@ def create_string_light(mcm, num_entries, length, start):
 
 if __name__ == '__main__':
     string_to_entry("test")
-#    result = markov_chain_of_natural_language(4, "random.txt")
-    result_2, num_entries = markov_chain_of_natural_language_lite(10, "random.txt")
-#    result = markov_chain_of_natural_language(4, "corncob_lowercase_cleaned.txt")
-#    string = create_string(result, 5000)
-    string = create_string_light(result_2, num_entries, 50)
+#    result = markov_chain_of_natural_language(2, "random.txt")
+    result_2, num_entries = markov_chain_of_natural_language_lite(0, "random.txt")
+    result = markov_chain_of_natural_language(2, "corncob_lowercase_cleaned.txt")
+    string = create_string(result, 5000)
+#    string = create_string_light(result, num_entries, 50)
 
-#    plt.imshow(result[1,:,:], cmap='Oranges', interpolation='none')
-#    plt.show()
+    plt.imshow(result[1,:,:], cmap='Oranges', interpolation='none')
+    plt.show()
             
