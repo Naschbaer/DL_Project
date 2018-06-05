@@ -221,7 +221,7 @@ def create_dataset(num_saples, overlap_frac = [0.3, 0.3], destination = ""):
             print(label)
             overlap_images.append([label, overlap(left_image, center_image, right_image, overlap_frac)])
         except:
-            print("fuck IT")
+            print("Character not present in the data set encounted. Skiping sample.")
 
         print("[Concatenating images] Status: %.2f %%" % (float(n)/float(num_saples)*100))
     print("Export overlaping characters dataset...")
