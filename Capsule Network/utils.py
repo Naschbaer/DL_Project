@@ -75,34 +75,40 @@ def load_fashion_mnist(batch_size, is_training=True):
 def load_emnist(batch_size, is_training=True):
     path = os.path.join('data', 'emnist')
     if is_training:
-        fd = open(os.path.join(path, 'emnist-byclass-train-images-idx3-ubyte'))
+        fd = open(os.path.join(path, 'emnist-byclass-train-images-idx3-ubyte_digits_only'))
         loaded = np.fromfile(file=fd, dtype=np.uint8)
-        trainX = loaded[16:].reshape((697932, 28, 28, 1)).astype(np.float32)
+        number_of_files = int(len(loaded[16:]) / (28 * 28))
+        print(number_of_files)
+        trainX = loaded[16:].reshape((number_of_files, 28, 28, 1)).astype(np.float32)
 
-        fd = open(os.path.join(path, 'emnist-byclass-train-labels-idx1-ubyte'))
+        fd = open(os.path.join(path, 'emnist-byclass-train-labels-idx1-ubyte_digits_only'))
         loaded = np.fromfile(file=fd, dtype=np.uint8)
-        trainY = loaded[8:].reshape((697932)).astype(np.int32)
+        trainY = loaded[8:].reshape((number_of_files)).astype(np.int32)
 
-        trX = trainX[:558345] / 255.
-        trY = trainY[:558345]
+        train_ratio = 0.8
+        num_train = int(number_of_files * train_ratio)
 
-        valX = trainX[558345:, ] / 255.
-        valY = trainY[558345:]
+        trX = trainX[:num_train] / 255.
+        trY = trainY[:num_train]
 
-        num_tr_batch = 558345 // batch_size
-        num_val_batch = 139587 // batch_size
+        valX = trainX[num_train:, ] / 255.
+        valY = trainY[num_train:]
+
+        num_tr_batch = num_train // batch_size
+        num_val_batch = (number_of_files - num_train) // batch_size
 
         return trX, trY, num_tr_batch, valX, valY, num_val_batch
     else:
-        fd = open(os.path.join(path, 'emnist-byclass-test-images-idx3-ubyte'))
+        fd = open(os.path.join(path, 'emnist-byclass-test-images-idx3-ubyte_digits_only'))
         loaded = np.fromfile(file=fd, dtype=np.uint8)
-        teX = loaded[16:].reshape((116323, 28, 28, 1)).astype(np.float)
+        number_of_test = len(loaded[16:]) / (28 * 28)
+        teX = loaded[16:].reshape((number_of_test, 28, 28, 1)).astype(np.float)
 
-        fd = open(os.path.join(path, 'emnist-byclass-test-labels-idx1-ubyte'))
+        fd = open(os.path.join(path, 'emnist-byclass-test-labels-idx1-ubyte_digits_only'))
         loaded = np.fromfile(file=fd, dtype=np.uint8)
-        teY = loaded[8:].reshape((116323)).astype(np.int32)
+        teY = loaded[8:].reshape((number_of_test)).astype(np.int32)
 
-        num_te_batch = 116323 // batch_size
+        num_te_batch = number_of_test // batch_size
         return teX / 255., teY, num_te_batch
 
 def load_overlapping_emnist(batch_size, is_training=True):
@@ -110,32 +116,38 @@ def load_overlapping_emnist(batch_size, is_training=True):
     if is_training:
         fd = open(os.path.join(path, 'emnist-byclass-train-images-idx3-ubyte_overlap'))
         loaded = np.fromfile(file=fd, dtype=np.uint8)
-        trainX = loaded[16:].reshape((697932, 28, 28, 1)).astype(np.float32)
+        number_of_files = int(len(loaded[16:])/(28*28))
+        print(number_of_files)
+        trainX = loaded[16:].reshape((number_of_files, 28, 28, 1)).astype(np.float32)
 
         fd = open(os.path.join(path, 'emnist-byclass-train-labels-idx1-ubyte_overlap'))
         loaded = np.fromfile(file=fd, dtype=np.uint8)
-        trainY = loaded[8:].reshape((697932)).astype(np.int32)
+        trainY = loaded[8:].reshape((number_of_files)).astype(np.int32)
 
-        trX = trainX[:558345] / 255.
-        trY = trainY[:558345]
+        train_ratio = 0.8
+        num_train = int(number_of_files * train_ratio)
 
-        valX = trainX[558345:, ] / 255.
-        valY = trainY[558345:]
+        trX = trainX[:num_train] / 255.
+        trY = trainY[:num_train]
 
-        num_tr_batch = 558345 // batch_size
-        num_val_batch = 139587 // batch_size
+        valX = trainX[num_train:, ] / 255.
+        valY = trainY[num_train:]
+
+        num_tr_batch = num_train // batch_size
+        num_val_batch = (number_of_files - num_train) // batch_size
 
         return trX, trY, num_tr_batch, valX, valY, num_val_batch
     else:
         fd = open(os.path.join(path, 'emnist-byclass-test-images-idx3-ubyte'))
         loaded = np.fromfile(file=fd, dtype=np.uint8)
-        teX = loaded[16:].reshape((116323, 28, 28, 1)).astype(np.float)
+        number_of_test = len(loaded[16:])/(28*28)
+        teX = loaded[16:].reshape((number_of_test, 28, 28, 1)).astype(np.float)
 
         fd = open(os.path.join(path, 'emnist-byclass-test-labels-idx1-ubyte'))
         loaded = np.fromfile(file=fd, dtype=np.uint8)
-        teY = loaded[8:].reshape((116323)).astype(np.int32)
+        teY = loaded[8:].reshape((number_of_test)).astype(np.int32)
 
-        num_te_batch = 116323 // batch_size
+        num_te_batch = number_of_test // batch_size
         return teX / 255., teY, num_te_batch
 
 

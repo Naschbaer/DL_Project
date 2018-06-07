@@ -11,7 +11,6 @@ from utils import get_batch_data
 from utils import softmax
 from utils import reduce_sum
 from capsLayer import CapsLayer
-import numpy as np
 
 
 epsilon = 1e-9
@@ -23,9 +22,7 @@ class CapsNet(object):
         with self.graph.as_default():
             if is_training:
                 self.X, self.labels = get_batch_data(cfg.dataset, cfg.batch_size, cfg.num_threads)
-
-                """"changed depth to 62, number of classes from EMNIST"""
-                self.Y = tf.one_hot(self.labels, depth=62, axis=1, dtype=tf.float32)
+                self.Y = tf.one_hot(self.labels, depth=10, axis=1, dtype=tf.float32)
 
                 self.build_arch()
                 self.loss()
@@ -38,12 +35,8 @@ class CapsNet(object):
             else:
                 self.X = tf.placeholder(tf.float32, shape=(cfg.batch_size, 28, 28, 1))
                 self.labels = tf.placeholder(tf.int32, shape=(cfg.batch_size, ))
-
-                """changed depth as well"""
-                self.Y = tf.reshape(self.labels, shape=(cfg.batch_size, 62, 1))
+                self.Y = tf.reshape(self.labels, shape=(cfg.batch_size, 10, 1))
                 self.build_arch()
-
-            print("Trainable parameters: {}".format(np.sum([np.prod(v.get_shape().as_list()) for v in tf.trainable_variables()])))
 
         tf.logging.info('Seting up the main structure')
 
@@ -61,23 +54,23 @@ class CapsNet(object):
             caps1 = primaryCaps(conv1, kernel_size=9, stride=2)
             assert caps1.get_shape() == [cfg.batch_size, 1152, 8, 1]
 
-        # DigitCaps layer, return [batch_size, 62, 16, 1]
+        # DigitCaps layer, return [batch_size, 10, 16, 1]
         with tf.variable_scope('DigitCaps_layer'):
-            digitCaps = CapsLayer(num_outputs=62, vec_len=16, with_routing=True, layer_type='FC')
+            digitCaps = CapsLayer(num_outputs=10, vec_len=16, with_routing=True, layer_type='FC')
             self.caps2 = digitCaps(caps1)
 
         # Decoder structure in Fig. 2
         # 1. Do masking, how:
         with tf.variable_scope('Masking'):
             # a). calc ||v_c||, then do softmax(||v_c||)
-            # [batch_size, 62, 16, 1] => [batch_size, 62, 1, 1]
+            # [batch_size, 10, 16, 1] => [batch_size, 10, 1, 1]
             self.v_length = tf.sqrt(reduce_sum(tf.square(self.caps2),
                                                axis=2, keepdims=True) + epsilon)
             self.softmax_v = softmax(self.v_length, axis=1)
-            assert self.softmax_v.get_shape() == [cfg.batch_size, 62, 1, 1]
+            assert self.softmax_v.get_shape() == [cfg.batch_size, 10, 1, 1]
 
-            # b). pick out the index of max softmax val of the 62 caps
-            # [batch_size, 62, 1, 1] => [batch_size] (index)
+            # b). pick out the index of max softmax val of the 10 caps
+            # [batch_size, 10, 1, 1] => [batch_size] (index)
             self.argmax_idx = tf.to_int32(tf.argmax(self.softmax_v, axis=1))
             assert self.argmax_idx.get_shape() == [cfg.batch_size, 1, 1]
             self.argmax_idx = tf.reshape(self.argmax_idx, shape=(cfg.batch_size, ))
@@ -96,8 +89,8 @@ class CapsNet(object):
                 assert self.masked_v.get_shape() == [cfg.batch_size, 1, 16, 1]
             # Method 2. masking with true label, default mode
             else:
-                # self.masked_v = tf.matmul(tf.squeeze(self.caps2), tf.reshape(self.Y, (-1, 62, 1)), transpose_a=True)
-                self.masked_v = tf.multiply(tf.squeeze(self.caps2), tf.reshape(self.Y, (-1, 62, 1)))
+                # self.masked_v = tf.matmul(tf.squeeze(self.caps2), tf.reshape(self.Y, (-1, 10, 1)), transpose_a=True)
+                self.masked_v = tf.multiply(tf.squeeze(self.caps2), tf.reshape(self.Y, (-1, 10, 1)))
                 self.v_length = tf.sqrt(reduce_sum(tf.square(self.caps2), axis=2, keepdims=True) + epsilon)
 
         # 2. Reconstructe the MNIST images with 3 FC layers
@@ -113,21 +106,21 @@ class CapsNet(object):
     def loss(self):
         # 1. The margin loss
 
-        # [batch_size, 62, 1, 1]
+        # [batch_size, 10, 1, 1]
         # max_l = max(0, m_plus-||v_c||)^2
         max_l = tf.square(tf.maximum(0., cfg.m_plus - self.v_length))
         # max_r = max(0, ||v_c||-m_minus)^2
         max_r = tf.square(tf.maximum(0., self.v_length - cfg.m_minus))
-        assert max_l.get_shape() == [cfg.batch_size, 62, 1, 1]
+        assert max_l.get_shape() == [cfg.batch_size, 10, 1, 1]
 
-        # reshape: [batch_size, 62, 1, 1] => [batch_size, 62]
+        # reshape: [batch_size, 10, 1, 1] => [batch_size, 10]
         max_l = tf.reshape(max_l, shape=(cfg.batch_size, -1))
         max_r = tf.reshape(max_r, shape=(cfg.batch_size, -1))
 
-        # calc T_c: [batch_size, 62]
+        # calc T_c: [batch_size, 10]
         # T_c = Y, is my understanding correct? Try it.
         T_c = self.Y
-        # [batch_size, 62], element-wise multiply
+        # [batch_size, 10], element-wise multiply
         L_c = T_c * max_l + cfg.lambda_val * (1 - T_c) * max_r
 
         self.margin_loss = tf.reduce_mean(tf.reduce_sum(L_c, axis=1))
