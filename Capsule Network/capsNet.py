@@ -42,17 +42,17 @@ class CapsNet(object):
 
     def build_arch(self):
         with tf.variable_scope('Conv1_layer'):
-            # Conv1, [batch_size, 26, 26, 256]
+            # Conv1, [batch_size, 24, 24, 256]
             conv1 = tf.contrib.layers.conv2d(self.X, num_outputs=256,
-                                             kernel_size=3, stride=1,
+                                             kernel_size=5, stride=1,
                                              padding='VALID')
-            assert conv1.get_shape() == [cfg.batch_size, 26, 26, 256]
+            assert conv1.get_shape() == [cfg.batch_size, 24, 24, 256]
 
-        # Primary Capsules layer, return [batch_size, 4608, 8, 1]
+        # Primary Capsules layer, return [batch_size, 3200, 8, 1]
         with tf.variable_scope('PrimaryCaps_layer'):
             primaryCaps = CapsLayer(num_outputs=32, vec_len=8, with_routing=False, layer_type='CONV')
-            caps1 = primaryCaps(conv1, kernel_size=3, stride=2)
-            assert caps1.get_shape() == [cfg.batch_size, 4608, 8, 1]
+            caps1 = primaryCaps(conv1, kernel_size=5, stride=2)
+            assert caps1.get_shape() == [cfg.batch_size, 3200, 8, 1]
 
         # DigitCaps layer, return [batch_size, 62, 16, 1]
         with tf.variable_scope('DigitCaps_layer'):
