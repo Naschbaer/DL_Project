@@ -78,7 +78,6 @@ def load_emnist(batch_size, is_training=True):
         fd = open(os.path.join(path, 'emnist-byclass-train-images-idx3-ubyte_digits_only'))
         loaded = np.fromfile(file=fd, dtype=np.uint8)
         number_of_files = int(len(loaded[16:]) / (28 * 28))
-        print(number_of_files)
         trainX = loaded[16:].reshape((number_of_files, 28, 28, 1)).astype(np.float32)
 
         fd = open(os.path.join(path, 'emnist-byclass-train-labels-idx1-ubyte_digits_only'))
@@ -117,7 +116,6 @@ def load_overlapping_emnist(batch_size, is_training=True):
         fd = open(os.path.join(path, 'emnist-byclass-train-images-idx3-ubyte_overlap'))
         loaded = np.fromfile(file=fd, dtype=np.uint8)
         number_of_files = int(len(loaded[16:])/(28*28))
-        print(number_of_files)
         trainX = loaded[16:].reshape((number_of_files, 28, 28, 1)).astype(np.float32)
 
         fd = open(os.path.join(path, 'emnist-byclass-train-labels-idx1-ubyte_overlap'))
