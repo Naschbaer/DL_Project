@@ -34,8 +34,8 @@ class CapsNet(object):
                 self.train_op = self.optimizer.minimize(self.total_loss, global_step=self.global_step)
             else:
                 self.X = tf.placeholder(tf.float32, shape=(cfg.batch_size, 28, 28, 1))
-                self.labels = tf.placeholder(tf.int32, shape=(cfg.batch_size, ))
-                self.Y = tf.reshape(self.labels, shape=(cfg.batch_size, 62, 1))
+                # self.labels = tf.placeholder(tf.int32, shape=(cfg.batch_size, ))
+                # self.Y = tf.reshape(self.labels, shape=(cfg.batch_size, 62, 1))
                 self.build_arch()
 
         tf.logging.info('Seting up the main structure')

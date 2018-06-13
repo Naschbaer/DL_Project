@@ -5,7 +5,7 @@ import tensorflow as tf
 from tqdm import tqdm
 
 from config import cfg
-from utils import load_data
+from utils import load_data, load_raw_images
 from capsNet import CapsNet
 
 
@@ -40,7 +40,7 @@ def save_to():
         return(fd_test_acc)
 
 
-def train(model, supervisor, num_label):
+def train(model, supervisor):
     trX, trY, num_tr_batch, valX, valY, num_val_batch = load_data(cfg.dataset, cfg.batch_size, is_training=True)
     Y = valY[:num_val_batch * cfg.batch_size].reshape((-1, 1))
 
@@ -61,7 +61,7 @@ def train(model, supervisor, num_label):
 
                 if global_step % cfg.train_sum_freq == 0:
                     _, loss, train_acc, summary_str = sess.run([model.train_op, model.total_loss, model.accuracy, model.train_summary])
-                    assert not np.isnan(loss), 'Something wrong! loss is nan...'
+                    assert not np.isnan(loss), "Something's wrong! loss is nan..."
                     supervisor.summary_writer.add_summary(summary_str, global_step)
 
                     fd_loss.write(str(global_step) + ',' + str(loss) + "\n")
@@ -90,7 +90,7 @@ def train(model, supervisor, num_label):
         fd_loss.close()
 
 
-def evaluation(model, supervisor, num_label):
+def evaluation(model, supervisor):
     teX, teY, num_te_batch = load_data(cfg.dataset, cfg.batch_size, is_training=False)
     fd_test_acc = save_to()
     with supervisor.managed_session(config=tf.ConfigProto(allow_soft_placement=True)) as sess:
@@ -109,20 +109,31 @@ def evaluation(model, supervisor, num_label):
         print('Test accuracy has been saved to ' + cfg.results + '/test_acc.csv')
 
 
+def prediction(model, supervisor):
+    teX = load_raw_images("/home/kuba/PycharmProjects/DL_Project/Receipts_data")
+    with supervisor.managed_session(config=tf.ConfigProto(allow_soft_placement=True)) as sess:
+        supervisor.saver.restore(sess, tf.train.latest_checkpoint(cfg.logdir))
+        tf.logging.info('Model restored!')
+
+        for image in teX:
+            pred = sess.run(model.argmax_idx, {model.X: image})
+            print(pred)
+
+
 def main(_):
-    tf.logging.info(' Loading Graph...')
-    num_label = 10
-    model = CapsNet()
-    tf.logging.info(' Graph loaded')
+    tf.logging.info('Loading Graph...')
+    model = CapsNet(cfg.is_training)
+    tf.logging.info('Graph loaded')
 
     sv = tf.train.Supervisor(graph=model.graph, logdir=cfg.logdir, save_model_secs=0)
 
     if cfg.is_training:
-        tf.logging.info(' Start training...')
-        train(model, sv, num_label)
+        tf.logging.info('Start training...')
+        train(model, sv)
         tf.logging.info('Training done')
     else:
-        evaluation(model, sv, num_label)
+        # evaluation(model, sv)
+        prediction(model, sv)
 
 if __name__ == "__main__":
     tf.app.run()
