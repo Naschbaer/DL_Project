@@ -111,17 +111,24 @@ def evaluation(model, supervisor):
 
 def prediction(model, supervisor):
     import matplotlib.pyplot as plt
-    teX = load_raw_images("../Receipts_data")
+    from PIL import Image
+    teX = load_raw_images("data/Receipts_data")
+    mapping = {}
+    with open("data/emnist/emnist-byclass-mapping.txt") as f:
+        for line in f:
+            (key, val) = line.split()
+            mapping[int(key)] = int(val)
+
     with supervisor.managed_session(config=tf.ConfigProto(allow_soft_placement=True)) as sess:
         supervisor.saver.restore(sess, tf.train.latest_checkpoint(cfg.logdir))
         tf.logging.info('Model restored!')
 
-        for image in teX:
-            pred = sess.run(model.argmax_idx, {model.X: np.reshape(image, (1, *image.shape))})
-            plt.imshow(image.reshape((28, 28)))
-            plt.title(chr(pred + 48))
-            plt.show()
+        for i, image in enumerate(teX):
 
+            pred = sess.run(model.argmax_idx, {model.X: np.reshape(image, (1, *image.shape))})
+            # plt.imshow(image.reshape((28, 28)))
+            img = Image.fromarray(image.reshape((28, 28))).convert('RGB')
+            img.save("predictions/{}_{}.png".format(i, chr(mapping[pred[0]])))
 
 
 def main(_):
