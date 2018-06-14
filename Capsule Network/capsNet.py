@@ -24,7 +24,7 @@ class CapsNet(object):
                 self.X, self.labels = get_batch_data(cfg.dataset, cfg.batch_size, cfg.num_threads)
                 self.Y = tf.one_hot(self.labels, depth=62, axis=1, dtype=tf.float32)
 
-                self.build_arch()
+                self.build_arch(is_training)
                 self.loss()
                 self._summary()
 
@@ -36,11 +36,11 @@ class CapsNet(object):
                 self.X = tf.placeholder(tf.float32, shape=(cfg.batch_size, 28, 28, 1))
                 # self.labels = tf.placeholder(tf.int32, shape=(cfg.batch_size, ))
                 # self.Y = tf.reshape(self.labels, shape=(cfg.batch_size, 62, 1))
-                self.build_arch()
+                self.build_arch(is_training)
 
         tf.logging.info('Seting up the main structure')
 
-    def build_arch(self):
+    def build_arch(self, is_training):
         with tf.variable_scope('Conv1_layer'):
             # Conv1, [batch_size, 24, 24, 256]
             conv1 = tf.contrib.layers.conv2d(self.X, num_outputs=256,
@@ -89,19 +89,19 @@ class CapsNet(object):
                 assert self.masked_v.get_shape() == [cfg.batch_size, 1, 16, 1]
             # Method 2. masking with true label, default mode
             else:
-                # self.masked_v = tf.matmul(tf.squeeze(self.caps2), tf.reshape(self.Y, (-1, 62, 1)), transpose_a=True)
                 self.masked_v = tf.multiply(tf.squeeze(self.caps2), tf.reshape(self.Y, (-1, 62, 1)))
                 self.v_length = tf.sqrt(reduce_sum(tf.square(self.caps2), axis=2, keepdims=True) + epsilon)
 
         # 2. Reconstructe the MNIST images with 3 FC layers
         # [batch_size, 1, 16, 1] => [batch_size, 16] => [batch_size, 512]
-        with tf.variable_scope('Decoder'):
-            vector_j = tf.reshape(self.masked_v, shape=(cfg.batch_size, -1))
-            fc1 = tf.contrib.layers.fully_connected(vector_j, num_outputs=512)
-            assert fc1.get_shape() == [cfg.batch_size, 512]
-            fc2 = tf.contrib.layers.fully_connected(fc1, num_outputs=1024)
-            assert fc2.get_shape() == [cfg.batch_size, 1024]
-            self.decoded = tf.contrib.layers.fully_connected(fc2, num_outputs=784, activation_fn=tf.sigmoid)
+        if is_training:
+            with tf.variable_scope('Decoder'):
+                vector_j = tf.reshape(self.masked_v, shape=(cfg.batch_size, -1))
+                fc1 = tf.contrib.layers.fully_connected(vector_j, num_outputs=512)
+                assert fc1.get_shape() == [cfg.batch_size, 512]
+                fc2 = tf.contrib.layers.fully_connected(fc1, num_outputs=1024)
+                assert fc2.get_shape() == [cfg.batch_size, 1024]
+                self.decoded = tf.contrib.layers.fully_connected(fc2, num_outputs=784, activation_fn=tf.sigmoid)
 
     def loss(self):
         # 1. The margin loss

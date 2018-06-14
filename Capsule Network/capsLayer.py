@@ -79,9 +79,8 @@ class CapsLayer(object):
 
                 # [batch_size, 3200, 8, 1]
                 capsules = squash(capsules)
-                print(capsules.get_shape())
                 assert capsules.get_shape() == [cfg.batch_size, 3200, 8, 1]
-                return(capsules)
+                return capsules
 
         if self.layer_type == 'FC':
             if self.with_routing:
@@ -96,7 +95,7 @@ class CapsLayer(object):
                     capsules = routing(self.input, b_IJ)
                     capsules = tf.squeeze(capsules, axis=1)
 
-            return(capsules)
+            return capsules
 
 
 def routing(input, b_IJ):

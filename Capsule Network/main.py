@@ -110,14 +110,18 @@ def evaluation(model, supervisor):
 
 
 def prediction(model, supervisor):
-    teX = load_raw_images("/home/kuba/PycharmProjects/DL_Project/Receipts_data")
+    import matplotlib.pyplot as plt
+    teX = load_raw_images("../Receipts_data")
     with supervisor.managed_session(config=tf.ConfigProto(allow_soft_placement=True)) as sess:
         supervisor.saver.restore(sess, tf.train.latest_checkpoint(cfg.logdir))
         tf.logging.info('Model restored!')
 
         for image in teX:
-            pred = sess.run(model.argmax_idx, {model.X: image})
-            print(pred)
+            pred = sess.run(model.argmax_idx, {model.X: np.reshape(image, (1, *image.shape))})
+            plt.imshow(image.reshape((28, 28)))
+            plt.title(chr(pred + 48))
+            plt.show()
+
 
 
 def main(_):
