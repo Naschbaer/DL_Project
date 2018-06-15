@@ -48,21 +48,6 @@ class CapsLayer(object):
                 # input: [batch_size, 20, 20, 256]
                 assert input.get_shape() == [cfg.batch_size, 20, 20, 256]
 
-                '''
-                # version 1, computational expensive
-                capsules = []
-                for i in range(self.vec_len):
-                    # each capsule i: [batch_size, 6, 6, 32]
-                    with tf.variable_scope('ConvUnit_' + str(i)):
-                        caps_i = tf.contrib.layers.conv2d(input, self.num_outputs,
-                                                          self.kernel_size, self.stride,
-                                                          padding="VALID", activation_fn=None)
-                        caps_i = tf.reshape(caps_i, shape=(cfg.batch_size, -1, 1, 1))
-                        capsules.append(caps_i)
-                assert capsules[0].get_shape() == [cfg.batch_size, 1152, 1, 1]
-                capsules = tf.concat(capsules, axis=2)
-                '''
-
                 # version 2, equivalent to version 1 but higher computational
                 # efficiency.
                 # NOTE: I can't find out any words from the paper whether the
@@ -80,7 +65,7 @@ class CapsLayer(object):
                 # [batch_size, 1152, 8, 1]
                 capsules = squash(capsules)
                 assert capsules.get_shape() == [cfg.batch_size, 1152, 8, 1]
-                return capsules
+                return(capsules)
 
         if self.layer_type == 'FC':
             if self.with_routing:
@@ -95,7 +80,7 @@ class CapsLayer(object):
                     capsules = routing(self.input, b_IJ)
                     capsules = tf.squeeze(capsules, axis=1)
 
-            return capsules
+            return(capsules)
 
 
 def routing(input, b_IJ):

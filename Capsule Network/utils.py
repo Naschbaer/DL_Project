@@ -44,7 +44,7 @@ def load_emnist(batch_size, is_training=True):
 
 
 def load_overlapping_emnist(batch_size, is_training=True):
-    path = os.path.join('data', 'EMNIST_OVERLAP')
+    path = os.path.join('data', 'emnist_overlap')
     if is_training:
         fd = open(os.path.join(path, 'emnist-byclass-train-images-idx3-ubyte_overlap'))
         loaded = np.fromfile(file=fd, dtype=np.uint8)

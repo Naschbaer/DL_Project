@@ -24,24 +24,24 @@ class CapsNet(object):
                 self.X, self.labels = get_batch_data(cfg.dataset, cfg.batch_size, cfg.num_threads)
                 self.Y = tf.one_hot(self.labels, depth=62, axis=1, dtype=tf.float32)
 
-                self.build_arch(is_training, predict)
+                self.build_arch(predict)
                 self.loss()
                 self._summary()
 
                 # t_vars = tf.trainable_variables()
                 self.global_step = tf.Variable(0, name='global_step', trainable=False)
                 self.optimizer = tf.train.AdamOptimizer()
-                self.train_op = self.optimizer.minimize(self.total_loss, global_step=self.global_step)
+                self.train_op = self.optimizer.minimize(self.total_loss, global_step=self.global_step)  # var_list=t_vars)
             else:
                 self.X = tf.placeholder(tf.float32, shape=(cfg.batch_size, 28, 28, 1))
                 if not predict:
                     self.labels = tf.placeholder(tf.int32, shape=(cfg.batch_size, ))
                     self.Y = tf.reshape(self.labels, shape=(cfg.batch_size, 62, 1))
-                self.build_arch(is_training, predict)
+                self.build_arch(predict)
 
         tf.logging.info('Seting up the main structure')
 
-    def build_arch(self, is_training, predict):
+    def build_arch(self, predict):
         with tf.variable_scope('Conv1_layer'):
             # Conv1, [batch_size, 20, 20, 256]
             conv1 = tf.contrib.layers.conv2d(self.X, num_outputs=256,
