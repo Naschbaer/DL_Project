@@ -110,7 +110,6 @@ def evaluation(model, supervisor):
 
 
 def prediction(model, supervisor):
-    import matplotlib.pyplot as plt
     from PIL import Image
     teX = load_raw_images("data/Receipts_data")
     mapping = {}
@@ -124,16 +123,14 @@ def prediction(model, supervisor):
         tf.logging.info('Model restored!')
 
         for i, image in enumerate(teX):
-
             pred = sess.run(model.argmax_idx, {model.X: np.reshape(image, (1, *image.shape))})
-            # plt.imshow(image.reshape((28, 28)))
             img = Image.fromarray(image.reshape((28, 28))).convert('RGB')
             img.save("predictions/{}_{}.png".format(i, chr(mapping[pred[0]])))
 
 
 def main(_):
     tf.logging.info('Loading Graph...')
-    model = CapsNet(cfg.is_training)
+    model = CapsNet(cfg.is_training, cfg.predict)
     tf.logging.info('Graph loaded')
 
     sv = tf.train.Supervisor(graph=model.graph, logdir=cfg.logdir, save_model_secs=0)
@@ -143,8 +140,10 @@ def main(_):
         train(model, sv)
         tf.logging.info('Training done')
     else:
-        # evaluation(model, sv)
-        prediction(model, sv)
+        if not cfg.predict:
+            evaluation(model, sv)
+        else:
+            prediction(model, sv)
 
 if __name__ == "__main__":
     tf.app.run()

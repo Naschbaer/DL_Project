@@ -17,14 +17,14 @@ epsilon = 1e-9
 
 
 class CapsNet(object):
-    def __init__(self, is_training=True):
+    def __init__(self, is_training=True, predict=False):
         self.graph = tf.Graph()
         with self.graph.as_default():
             if is_training:
                 self.X, self.labels = get_batch_data(cfg.dataset, cfg.batch_size, cfg.num_threads)
                 self.Y = tf.one_hot(self.labels, depth=62, axis=1, dtype=tf.float32)
 
-                self.build_arch(is_training)
+                self.build_arch(is_training, predict)
                 self.loss()
                 self._summary()
 
@@ -34,25 +34,26 @@ class CapsNet(object):
                 self.train_op = self.optimizer.minimize(self.total_loss, global_step=self.global_step)
             else:
                 self.X = tf.placeholder(tf.float32, shape=(cfg.batch_size, 28, 28, 1))
-                # self.labels = tf.placeholder(tf.int32, shape=(cfg.batch_size, ))
-                # self.Y = tf.reshape(self.labels, shape=(cfg.batch_size, 62, 1))
-                self.build_arch(is_training)
+                if not predict:
+                    self.labels = tf.placeholder(tf.int32, shape=(cfg.batch_size, ))
+                    self.Y = tf.reshape(self.labels, shape=(cfg.batch_size, 62, 1))
+                self.build_arch(is_training, predict)
 
         tf.logging.info('Seting up the main structure')
 
-    def build_arch(self, is_training):
+    def build_arch(self, is_training, predict):
         with tf.variable_scope('Conv1_layer'):
-            # Conv1, [batch_size, 24, 24, 256]
+            # Conv1, [batch_size, 20, 20, 256]
             conv1 = tf.contrib.layers.conv2d(self.X, num_outputs=256,
-                                             kernel_size=5, stride=1,
+                                             kernel_size=9, stride=1,
                                              padding='VALID')
-            assert conv1.get_shape() == [cfg.batch_size, 24, 24, 256]
+            assert conv1.get_shape() == [cfg.batch_size, 20, 20, 256]
 
-        # Primary Capsules layer, return [batch_size, 3200, 8, 1]
+        # Primary Capsules layer, return [batch_size, 1152, 8, 1]
         with tf.variable_scope('PrimaryCaps_layer'):
             primaryCaps = CapsLayer(num_outputs=32, vec_len=8, with_routing=False, layer_type='CONV')
-            caps1 = primaryCaps(conv1, kernel_size=5, stride=2)
-            assert caps1.get_shape() == [cfg.batch_size, 3200, 8, 1]
+            caps1 = primaryCaps(conv1, kernel_size=9, stride=2)
+            assert caps1.get_shape() == [cfg.batch_size, 1152, 8, 1]
 
         # DigitCaps layer, return [batch_size, 62, 16, 1]
         with tf.variable_scope('DigitCaps_layer'):
@@ -94,7 +95,7 @@ class CapsNet(object):
 
         # 2. Reconstructe the MNIST images with 3 FC layers
         # [batch_size, 1, 16, 1] => [batch_size, 16] => [batch_size, 512]
-        if is_training:
+        if not predict:
             with tf.variable_scope('Decoder'):
                 vector_j = tf.reshape(self.masked_v, shape=(cfg.batch_size, -1))
                 fc1 = tf.contrib.layers.fully_connected(vector_j, num_outputs=512)
