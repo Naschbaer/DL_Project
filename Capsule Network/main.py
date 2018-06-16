@@ -111,21 +111,25 @@ def evaluation(model, supervisor):
 
 def prediction(model, supervisor):
     from PIL import Image
-    teX = load_raw_images("data/Receipts_data")
+    teX = load_raw_images("data/Receipts_data/Jumbo")
     mapping = {}
     with open("data/emnist/emnist-byclass-mapping.txt") as f:
         for line in f:
             (key, val) = line.split()
             mapping[int(key)] = int(val)
 
+    softmax_mat = np.zeros((teX.shape[0], 62))
     with supervisor.managed_session(config=tf.ConfigProto(allow_soft_placement=True)) as sess:
         supervisor.saver.restore(sess, tf.train.latest_checkpoint(cfg.logdir))
         tf.logging.info('Model restored!')
 
         for i, image in enumerate(teX):
-            pred = sess.run(model.argmax_idx, {model.X: np.reshape(image, (1, *image.shape))})
-            img = Image.fromarray(image.reshape((28, 28))).convert('RGB')
-            img.save("predictions/{}_{}.png".format(i, chr(mapping[pred[0]])))
+            res = sess.run(model.softmax_v, {model.X: np.reshape(image, (1, *image.shape))})
+            softmax_mat[i, :] = np.reshape(res, (62))
+            # img = Image.fromarray(np.fliplr(np.rot90(image.reshape((28, 28)),-1))).convert('RGB')
+            # img.save("predictions/Jumbo/{}_{}.png".format(i, chr(mapping[pred[0]])))
+        np.save("softmax_matrix.npy", softmax_mat)
+    # return softmax_mat
 
 
 def main(_):
@@ -143,7 +147,7 @@ def main(_):
         if not cfg.predict:
             evaluation(model, sv)
         else:
-            prediction(model, sv)
+            return prediction(model, sv)
 
 if __name__ == "__main__":
     tf.app.run()
