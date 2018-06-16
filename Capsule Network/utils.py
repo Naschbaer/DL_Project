@@ -84,7 +84,7 @@ def load_overlapping_emnist(batch_size, is_training=True):
 
 def load_raw_images(path):
     from scipy import misc
-    teX = np.array([misc.imread(os.path.join(path, f)) for f in os.listdir(path) if f.endswith(".jpg")])
+    teX = np.array([np.rot90(np.fliplr(misc.imread(os.path.join(path, f)))) for f in os.listdir(path) if f.endswith(".png")])
     teX = teX.reshape((*teX.shape, 1)).astype(np.float)
 
     return teX
