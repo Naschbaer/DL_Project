@@ -40,9 +40,9 @@ def save_to():
         return(fd_test_acc)
 
 
-def train(model, supervisor):
-    trX, trY, num_tr_batch, valX, valY, num_val_batch = load_data(cfg.dataset, cfg.batch_size, is_training=True)
-    Y = valY[:num_val_batch * cfg.batch_size].reshape((-1, 1))
+def train(model, supervisor, num_tr_batch):
+    # trX, trY, num_tr_batch = load_data(cfg.dataset, cfg.batch_size, is_training=True)
+    # Y = valY[:num_val_batch * cfg.batch_size].reshape((-1, 1))
 
     fd_train_acc, fd_loss, fd_val_acc = save_to()
     config = tf.ConfigProto()
@@ -55,8 +55,8 @@ def train(model, supervisor):
                 print('supervisor stoped!')
                 break
             for step in tqdm(range(num_tr_batch), total=num_tr_batch, ncols=70, leave=False, unit='b'):
-                start = step * cfg.batch_size
-                end = start + cfg.batch_size
+                # start = step * cfg.batch_size
+                # end = start + cfg.batch_size
                 global_step = epoch * num_tr_batch + step
 
                 if global_step % cfg.train_sum_freq == 0:
@@ -71,26 +71,26 @@ def train(model, supervisor):
                 else:
                     sess.run(model.train_op)
 
-                if cfg.val_sum_freq != 0 and (global_step) % cfg.val_sum_freq == 0:
-                    val_acc = 0
-                    for i in range(num_val_batch):
-                        start = i * cfg.batch_size
-                        end = start + cfg.batch_size
-                        acc = sess.run(model.accuracy, {model.X: valX[start:end], model.labels: valY[start:end]})
-                        val_acc += acc
-                    val_acc = val_acc / (cfg.batch_size * num_val_batch)
-                    fd_val_acc.write(str(global_step) + ',' + str(val_acc) + '\n')
-                    fd_val_acc.flush()
+                # if cfg.val_sum_freq != 0 and (global_step) % cfg.val_sum_freq == 0:
+                #     val_acc = 0
+                #     for i in range(num_val_batch):
+                #         start = i * cfg.batch_size
+                #         end = start + cfg.batch_size
+                #         acc = sess.run(model.accuracy, {model.X: valX[start:end], model.labels: valY[start:end]})
+                #         val_acc += acc
+                #     val_acc = val_acc / (cfg.batch_size * num_val_batch)
+                #     fd_val_acc.write(str(global_step) + ',' + str(val_acc) + '\n')
+                #     fd_val_acc.flush()
 
-            if (epoch + 1) % cfg.save_freq == 0:
-                supervisor.saver.save(sess, cfg.logdir + '/model_epoch_%04d_step_%02d' % (epoch, global_step))
+            # if (epoch + 1) % cfg.save_freq == 0:
+            supervisor.saver.save(sess, cfg.logdir + '/model_epoch_%04d_step_%02d' % (epoch))
 
         fd_val_acc.close()
         fd_train_acc.close()
         fd_loss.close()
 
 
-def evaluation(model, supervisor):
+def evaluation(model, supervisor, i):
     teX, teY, num_te_batch = load_data(cfg.dataset, cfg.batch_size, is_training=False)
     fd_test_acc = save_to()
     with supervisor.managed_session(config=tf.ConfigProto(allow_soft_placement=True)) as sess:
@@ -104,6 +104,7 @@ def evaluation(model, supervisor):
             acc = sess.run(model.accuracy, {model.X: teX[start:end], model.labels: teY[start:end]})
             test_acc += acc
         test_acc = test_acc / (cfg.batch_size * num_te_batch)
+        print("Test accuracy on the set with occluding rate {}0%: {}".format(i, test_acc))
         fd_test_acc.write(str(test_acc))
         fd_test_acc.close()
         print('Test accuracy has been saved to ' + cfg.results + '/test_acc.csv')
@@ -134,20 +135,25 @@ def prediction(model, supervisor):
 
 def main(_):
     tf.logging.info('Loading Graph...')
-    model = CapsNet(cfg.is_training, cfg.predict)
+    # model = CapsNet()
     tf.logging.info('Graph loaded')
 
-    sv = tf.train.Supervisor(graph=model.graph, logdir=cfg.logdir, save_model_secs=0)
+    # if cfg.is_training:
+    #     tf.logging.info('Start training...')
+    #     train(model, sv, model.tr_batch_num)
+    #     tf.logging.info('Training done')
+    # else:
+    #     if not cfg.predict:
+    #         evaluation(model, sv)
+    #     else:
+    #         return prediction(model, sv)
 
-    if cfg.is_training:
-        tf.logging.info('Start training...')
-        train(model, sv)
-        tf.logging.info('Training done')
-    else:
-        if not cfg.predict:
-            evaluation(model, sv)
-        else:
-            return prediction(model, sv)
+    for i in range(8):
+        model = CapsNet(i+1)
+        sv = tf.train.Supervisor(graph=model.graph, logdir=cfg.logdir, save_model_secs=0)
+        train(model, sv, model.tr_batch_num)
+        evaluation(model, sv, i+1)
+
 
 if __name__ == "__main__":
     tf.app.run()
